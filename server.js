@@ -13,6 +13,8 @@ app.use(cors())
 
 // allowing JSON data
 app.use(express.json())
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes'));
 // Connecting to the Database using your MONGO_URI variable
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("✅ MongoDB Connected!"))
