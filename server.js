@@ -1,31 +1,37 @@
-// importing express package
-const express = require('express')
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-// importing cors package
-const cors = require('cors')
-const mongoose = require('mongoose')
-require('dotenv').config()
-// creating express app
-const app = express()
+// Custom middleware to prevent spamming
+const limiter = require('./middleware/rateLimiter'); 
 
-// allowing frontend to talk to backend
-app.use(cors())
+const app = express();
 
-// allowing JSON data
-app.use(express.json())
+// 1. Setup for hosting (Render/Vercel) to get real user IPs
+app.set('trust proxy', 1); 
+
+// 2. Middleware Pipeline (Order matters for performance)
+app.use(limiter);       // Stop bots first
+app.use(cors());        // Check if website is allowed
+app.use(express.json()); // Handle JSON data
+
+// 3. API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
-// Connecting to the Database using your MONGO_URI variable
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected!"))
-    .catch(err => console.log("❌ Connection Error:", err));
-// test route to check server is working
-app.get('/', (req, res) => {
-    res.send("EMS Server is running with established database connection!")
-})
-// This checks the environment first, then defaults to 5000 if nothing is found
-const PORT = process.env.PORT || 5000;
 
+// 4. Database Connection
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch((err) => console.log("❌ Connection Error"));
+
+// 5. Health Check
+app.get('/', (req, res) => {
+    res.json({ message: "EMS Server is live" });
+});
+
+// 6. Port & Listener
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Running on port ${PORT}`);
 });
